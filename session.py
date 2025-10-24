@@ -3,9 +3,9 @@ from sqlalchemy.ext.asyncio import create_async_engine,AsyncSession
 from sqlalchemy.orm import sessionmaker
 from models import SQLModel
 from fastapi import Depends
-from config import settings
+from config import db_settings
 
-sql_url = settings.POSTGRES_URL
+sql_url = db_settings.POSTGRES_URL
 engine = create_async_engine(sql_url,echo=True)
 
 async def create_datebase():
@@ -21,10 +21,6 @@ async def get_session():
    )
      async with async_session() as session:
         yield session
-
-
-sesseionDep = Annotated[AsyncSession,Depends(get_session)]
-
 
 
 

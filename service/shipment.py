@@ -1,7 +1,8 @@
+from typing import Optional
 from fastapi import HTTPException,status
 from sqlalchemy import select
 from models import Shipment, ShipmentStatus
-from schema import ShipmentRequest, ShipmentUpdate
+from schemas import CreateShipment, ShipmentUpdate
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime,timedelta
 
@@ -15,25 +16,25 @@ class ShipmentService:
         await self.session.refresh(shipment)
     
 
-    async def create(self,shipment_data:ShipmentRequest,)->dict[str,int]:
+    async def create(self,shipment_data:CreateShipment,)->Shipment:
         new_shipment = Shipment(
         **shipment_data.model_dump(),
         status= ShipmentStatus.placed,
         estimated_delivery=datetime.now() + timedelta(days=5)
         )
         await self.commit(new_shipment)
-        return {"id": new_shipment.id}
+        return new_shipment
     
 
     async def read_one(self,id:int)->Shipment:
-        shipment = await self.session.get(Shipment,id)
+        shipment: Optional[Shipment] = await self.session.get(Shipment,id)
         if not shipment:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Shipment not found.')
         return shipment
 
     
     async def update(self,shipment_data:ShipmentUpdate,id:int):
-        shipment = await self.read_one(id)
+        shipment =  await self.read_one(id)
         update = shipment_data.model_dump(exclude_none=True)
         if not update:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='No data provided for update.')

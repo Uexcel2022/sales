@@ -1,12 +1,9 @@
-from datetime import datetime, timedelta
-from typing import List
-from fastapi import APIRouter,status,HTTPException
-from sqlalchemy import select
-from session import sesseionDep
 
-from models import Shipment, ShipmentStatus
-from schema import ShipmentRequest, ShipmentResponse, ShipmentUpdate
-from service.shipment import ShipmentService
+from typing import List
+from fastapi import APIRouter,status
+from dependency import shipmentServiceDep
+from schemas import CreateShipment, ShipmentRead, ShipmentUpdate
+
 
 router = APIRouter(
     prefix="/api/v1",
@@ -14,32 +11,29 @@ router = APIRouter(
 )
 
 
-@router.post('/shipments',status_code=status.HTTP_201_CREATED)
-async def create_shipment(shipment_data: ShipmentRequest, session: sesseionDep):
-     shipment_service = ShipmentService(session)
-     return await shipment_service.create(shipment_data)
+@router.post('/shipments',status_code=status.HTTP_201_CREATED,response_model=ShipmentRead)
+async def create_shipment(shipment_data: CreateShipment, service:shipmentServiceDep):
+     return await service.create(shipment_data)
+     
+     
+@router.get('/shipment/{id}',response_model=ShipmentRead,status_code=status.HTTP_200_OK)
+async def read_one_shipment(id:int,service: shipmentServiceDep):
+    return  await service.read_one(id)
 
 
-@router.get('/shipment/{id}',response_model=ShipmentResponse,status_code=status.HTTP_200_OK)
-async def read_one_shipment(id:int,session:sesseionDep):
-    shipment_service = ShipmentService(session)
-    return await shipment_service.read_one(id)
+@router.get("/shipents", response_model=List[ShipmentRead],status_code=status.HTTP_200_OK)
+async def read_all_shipment(service: shipmentServiceDep):
+    return await service.get_all()
+    
 
 
-@router.get("/shipents", response_model=List[ShipmentResponse],status_code=status.HTTP_200_OK)
-async def read_all_shipment(session: sesseionDep):
-    shipment_service = ShipmentService(session)
-    return await shipment_service.get_all()
+@router.put("/shipments/{id}", status_code=status.HTTP_200_OK,response_model=ShipmentRead)
+async def update_shipment(service:shipmentServiceDep,shipment_data:ShipmentUpdate,id:int):
+    return await service.update(shipment_data,id)
 
-
-@router.put("/shipments/{id}", status_code=status.HTTP_200_OK,response_model=ShipmentResponse)
-async def update_shipment(session:sesseionDep,shipment_data:ShipmentUpdate,id:int):
-    shipment_service = ShipmentService(session)
-    return await shipment_service.update(shipment_data,id)
 
 
 @router.delete("/shipments/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_shipment(session: sesseionDep,id:int):
-  shipment_service = ShipmentService(session)
-  await shipment_service.delete(id)
+async def delete_shipment(service:shipmentServiceDep,id:int):
+  await service.delete(id)
   
