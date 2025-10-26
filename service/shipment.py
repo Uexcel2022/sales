@@ -1,7 +1,7 @@
 from typing import Optional
 from fastapi import HTTPException,status
 from sqlalchemy import select
-from models import Shipment, ShipmentStatus
+from models.database import Shipment, ShipmentStatus
 from schemas import CreateShipment, ShipmentUpdate
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime,timedelta

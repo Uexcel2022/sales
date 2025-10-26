@@ -1,7 +1,7 @@
 from typing import Annotated
 from sqlalchemy.ext.asyncio import create_async_engine,AsyncSession
 from sqlalchemy.orm import sessionmaker
-from models import SQLModel
+from models.database import SQLModel
 from fastapi import Depends
 from config import db_settings
 

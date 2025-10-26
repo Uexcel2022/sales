@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, EmailStr,Field
-from models import ShipmentStatus
+from models.database import ShipmentStatus
 
 class BaseShipment(BaseModel):
     content: str

@@ -12,6 +12,8 @@ class DBSettings(BaseSettings):
     POSTGRES_SERVER: str = "whewre"
     POSTGRES_PORT: int = 5000
     POSTGRES_DB: str = "qmqmw"
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
    
 
     model_config = _base_config

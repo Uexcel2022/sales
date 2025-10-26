@@ -3,12 +3,13 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException,status
 from typing import Any, Optional
 from uuid import uuid4
+from models.redis import add_token_to_blacklist,is_token_blacklisted
 
 import jwt
 from config import sec_settings
 
 from sqlalchemy import select
-from models import Seller
+from models.database import Seller
 from schemas import CreateSeller
 from sqlalchemy.ext.asyncio import AsyncSession
 from passlib.context import CryptContext
@@ -64,9 +65,13 @@ class AuthService:
 
         return token
     
+
     async def token_validation(self,token:str)->dict[str,Any]:
             
             payload = await self.decode_token(token)
+
+            if await is_token_blacklisted(payload['jti']):
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Authentication failed!")
         
             seller = await self.session.get(Seller,payload['user']['id'])
             if not seller:
@@ -74,15 +79,15 @@ class AuthService:
 
             return seller.model_dump()
         
-        
 
     async def decode_token(self,token)->dict[str,Any]:
          try:
-            payload= jwt.decode(
+            payload = jwt.decode(
                 token,
                 algorithms=[sec_settings.ALGORITHM],
                 key=sec_settings.SECRET_KEY
             )
+
             return payload
         
          except jwt.DecodeError:
@@ -93,7 +98,8 @@ class AuthService:
         payload = await self.decode_token(token)
         token_id = payload['jti']
 
+        await add_token_to_blacklist(token_id,(60*24*30*6))
 
         return {
-            "message": "You have been logged out successfully!"
+            "detail": "You have been logged out successfully!"
         }
