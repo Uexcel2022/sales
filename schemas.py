@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel, EmailStr,Field
 from models import ShipmentStatus
 
@@ -7,11 +8,6 @@ class BaseShipment(BaseModel):
     weight: float = Field(gt=0, le=25, description='Weight in KG')
     destination: int
 
-
-class ShipmentRead(BaseShipment):
-    id: int = Field(gt=0)
-    status: ShipmentStatus
-    estimated_delivery: datetime
 
 class CreateShipment(BaseShipment):
     pass
@@ -30,6 +26,33 @@ class SellerRead(BaseModel):
     id: int
     name: str = Field(pattern="^[a-zA-Z]{3,20} ?[a-zA-Z]*$")
     email: EmailStr
+    def model_dump(self):
+        return{
+            "id":self.id,
+            "name":self.name,
+            "email": self.email
+        }
+
+
+
+class ShipmentRead(BaseShipment):
+    id: int = Field(gt=0)
+    status: ShipmentStatus
+    estimated_delivery: datetime
+    seller: Optional[SellerRead]=Field(default=None)
+
+    def model_dump(self):
+        return{
+            "content":self.content,
+            "status":self.status,
+            "estimated_delivery": self.estimated_deliver,
+            "seller": self.seller.model_dump()
+        }
+        
+class LoggedOut(BaseModel):
+    message: str = Field( default="You have been logged out successfully!")
+
+
 
 
 class Token(BaseModel):

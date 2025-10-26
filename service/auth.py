@@ -1,7 +1,8 @@
 
 from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException,status
-from typing import Any, Optional, Dict
+from typing import Any, Optional
+from uuid import uuid4
 
 import jwt
 from config import sec_settings
@@ -14,14 +15,12 @@ from passlib.context import CryptContext
 
 
 pwd_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
- 
-
 
 class AuthService:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self,seller:CreateSeller)->Dict[str, Any]:
+    async def create(self,seller:CreateSeller)->dict[str, Any]:
         new_seller = Seller(
             **seller.model_dump(exclude={'password'}),
             hashed_password=pwd_context.hash(seller.password)
@@ -31,7 +30,7 @@ class AuthService:
         await self.session.refresh(new_seller)
         return new_seller.model_dump()
     
-    async def get_seller(self, id:int)->Dict[str, Any]:
+    async def get_seller(self, id:int)->dict[str, Any]:
         seller: Optional[Seller] = await self.session.get(Seller, id)
         if not seller:
             raise HTTPException(status_code= status.HTTP_404_NOT_FOUND,detail="Seller not found") 
@@ -56,13 +55,45 @@ class AuthService:
                 "user": {
                 "id": seller.id,
                 "name": seller.name
-            },"exp": datetime.now(timezone.utc)+ timedelta(days=1),
-        }, algorithm=sec_settings.ALGORITHM,key=sec_settings.SECRET_KEY)
+                },
+            "jti": str(uuid4()),
+            "exp": datetime.now(timezone.utc)+ timedelta(days=1)
+            },
+            algorithm=sec_settings.ALGORITHM,key=sec_settings.SECRET_KEY
+        )
 
         return token
     
-   
+    async def token_validation(self,token:str)->dict[str,Any]:
+            
+            payload = await self.decode_token(token)
+        
+            seller = await self.session.get(Seller,payload['user']['id'])
+            if not seller:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Seller does not exist!")
+
+            return seller.model_dump()
+        
+        
+
+    async def decode_token(self,token)->dict[str,Any]:
+         try:
+            payload= jwt.decode(
+                token,
+                algorithms=[sec_settings.ALGORITHM],
+                key=sec_settings.SECRET_KEY
+            )
+            return payload
+        
+         except jwt.DecodeError:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Authentication failed!")
+            
+
+    async def logout(self, token:str):
+        payload = await self.decode_token(token)
+        token_id = payload['jti']
 
 
-
-    
+        return {
+            "message": "You have been logged out successfully!"
+        }

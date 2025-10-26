@@ -6,6 +6,7 @@ from schemas import CreateShipment, ShipmentUpdate
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime,timedelta
 
+
 class ShipmentService:
     def __init__(self,session:AsyncSession):
         self.session = session
