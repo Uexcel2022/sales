@@ -1,5 +1,6 @@
 
 from typing import List
+from uuid import UUID
 from fastapi import APIRouter,status
 from dependency import shipmentServiceDep,authServiceDep,pwd_bearerDP
 from schemas import CreateShipment, ShipmentRead, ShipmentUpdate
@@ -13,22 +14,25 @@ router = APIRouter(
 @router.post('/shipments',status_code=status.HTTP_201_CREATED,response_model=ShipmentRead)
 async def create_shipment(token:pwd_bearerDP,shipment_data: CreateShipment,
                           service:shipmentServiceDep,auth:authServiceDep):
-     shpiment = await service.create(shipment_data)
      seller = await auth.token_validation(token)
-     shipment_info = {**shpiment.model_dump()}
-     shipment_info.update({"seller":seller})
-     return shipment_info
-    
-     
-     
-@router.get('/shipments/{id}',response_model=ShipmentRead,status_code=status.HTTP_200_OK)
-async def read_one_shipment(token:pwd_bearerDP,id:int,
+     shpiment = await service.create(shipment_data, seller['id'])
+     return shpiment
+
+
+@router.get('/seller/shipments',response_model=List[ShipmentRead],status_code=status.HTTP_200_OK)
+async def read_seller_shipments(token:pwd_bearerDP,id:UUID,
                             service: shipmentServiceDep,authService:authServiceDep):
     seller = await authService.token_validation(token)
+    shipment = await service.read_all_seller_shipments(seller['id'])
+    return shipment
+    
+     
+@router.get('/shipments/{id}',response_model=ShipmentRead,status_code=status.HTTP_200_OK)
+async def read_one_shipment(token:pwd_bearerDP,id:UUID,
+                            service: shipmentServiceDep,authService:authServiceDep):
+    await authService.token_validation(token)
     shipment = await service.read_one(id)
-    shipment_info = {**shipment.model_dump()}
-    shipment_info.update({"seller":seller})
-    return shipment_info
+    return shipment
     
 
 @router.get("/shipents", response_model=List[ShipmentRead],status_code=status.HTTP_200_OK)
@@ -39,13 +43,13 @@ async def read_all_shipment(token:pwd_bearerDP,authService:authServiceDep,servic
 
 @router.put("/shipments/{id}", status_code=status.HTTP_200_OK,response_model=ShipmentRead)
 async def update_shipment(authService:authServiceDep,token:pwd_bearerDP,
-                          service:shipmentServiceDep,shipment_data:ShipmentUpdate,id:int):
+                          service:shipmentServiceDep,shipment_data:ShipmentUpdate,id:UUID):
     await authService.token_validation(token)
     return await service.update(shipment_data,id)
 
 
 @router.delete("/shipments/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_shipment(authService:authServiceDep,token:pwd_bearerDP,service:shipmentServiceDep,id:int):
+async def delete_shipment(authService:authServiceDep,token:pwd_bearerDP,service:shipmentServiceDep,id:UUID):
   await authService.token_validation(token)
   await service.delete(id)
   

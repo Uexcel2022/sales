@@ -1,10 +1,11 @@
-from typing import Optional
+from typing import Optional, Sequence
 from fastapi import HTTPException,status
 from sqlalchemy import select
 from models.database import Shipment, ShipmentStatus
 from schemas import CreateShipment, ShipmentUpdate
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime,timedelta
+from uuid import UUID
 
 
 class ShipmentService:
@@ -17,24 +18,31 @@ class ShipmentService:
         await self.session.refresh(shipment)
     
 
-    async def create(self,shipment_data:CreateShipment,)->Shipment:
+    async def create(self,shipment_data:CreateShipment,id:UUID)->Shipment:
         new_shipment = Shipment(
         **shipment_data.model_dump(),
         status= ShipmentStatus.placed,
-        estimated_delivery=datetime.now() + timedelta(days=5)
+        estimated_delivery=datetime.now() + timedelta(days=5),
+        seller_id= id
         )
         await self.commit(new_shipment)
         return new_shipment
-    
 
-    async def read_one(self,id:int)->Shipment:
+    async def read_one(self,id:UUID)->Shipment:
         shipment: Optional[Shipment] = await self.session.get(Shipment,id)
         if not shipment:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Shipment not found.')
         return shipment
-
     
-    async def update(self,shipment_data:ShipmentUpdate,id:int):
+    async def read_all_seller_shipments(self,id:UUID)->Sequence[Shipment]:
+        result = await self.session.scalars(select(Shipment).filter_by(seller_id=id))
+        shipments = result.all()
+        
+        if len(shipments) ==0:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='No shipment found.')
+        return shipments
+
+    async def update(self,shipment_data:ShipmentUpdate,id:UUID):
         shipment =  await self.read_one(id)
         update = shipment_data.model_dump(exclude_none=True)
         if not update:
@@ -50,7 +58,7 @@ class ShipmentService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No shipment found.")
         return shipmentList
     
-    async def delete(self,id:int)->None:
+    async def delete(self,id:UUID)->None:
         shipment = await self.read_one(id)
         await self.session.delete(shipment)
         await self.session.commit()

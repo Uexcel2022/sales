@@ -12,7 +12,7 @@ router = APIRouter(
 )
 
 @router.post("/signup",status_code=status.HTTP_201_CREATED,response_model=SellerRead)
-async def register_seller(token:pwd_bearerDP,seller:CreateSeller, service:authServiceDep):
+async def register_seller(seller:CreateSeller, service:authServiceDep):
     return await service.create(seller)
 
 @router.get("/seller",response_model=SellerRead)
@@ -26,4 +26,5 @@ async def authenticate_seller(service:authServiceDep,form_data: Annotated[OAuth2
 
 @router.post("/logout",response_model=LoggedOut)
 async def logout_handler(token: pwd_bearerDP, service:authServiceDep):
+
     return await service.logout(token)

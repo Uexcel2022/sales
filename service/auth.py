@@ -1,8 +1,8 @@
 
 from datetime import datetime, timedelta, timezone
+from uuid import UUID, uuid4
 from fastapi import HTTPException,status
 from typing import Any, Optional
-from uuid import uuid4
 from models.redis import add_token_to_blacklist,is_token_blacklisted
 
 import jwt
@@ -31,7 +31,8 @@ class AuthService:
         await self.session.refresh(new_seller)
         return new_seller.model_dump()
     
-    async def get_seller(self, id:int)->dict[str, Any]:
+    
+    async def get_seller(self, id:UUID)->dict[str, Any]:
         seller: Optional[Seller] = await self.session.get(Seller, id)
         if not seller:
             raise HTTPException(status_code= status.HTTP_404_NOT_FOUND,detail="Seller not found") 
@@ -54,7 +55,7 @@ class AuthService:
         token = jwt.encode(
             payload={
                 "user": {
-                "id": seller.id,
+                "id": str(seller.id),
                 "name": seller.name
                 },
             "jti": str(uuid4()),
@@ -65,7 +66,6 @@ class AuthService:
 
         return token
     
-
     async def token_validation(self,token:str)->dict[str,Any]:
             
             payload = await self.decode_token(token)
@@ -73,7 +73,7 @@ class AuthService:
             if await is_token_blacklisted(payload['jti']):
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Authentication failed!")
         
-            seller = await self.session.get(Seller,payload['user']['id'])
+            seller = await self.session.get(Seller,UUID(payload['user']['id']))
             if not seller:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail="Seller does not exist!")
 

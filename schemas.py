@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 from pydantic import BaseModel, EmailStr,Field
 from models.database import ShipmentStatus
 
@@ -23,7 +24,7 @@ class CreateSeller(BaseModel):
     password:str=Field(min_length=6,max_length=16)
 
 class SellerRead(BaseModel):
-    id: int
+    id: UUID    
     name: str = Field(pattern="^[a-zA-Z]{3,20} ?[a-zA-Z]*$")
     email: EmailStr
     def model_dump(self):
@@ -36,7 +37,7 @@ class SellerRead(BaseModel):
 
 
 class ShipmentRead(BaseShipment):
-    id: int = Field(gt=0)
+    id: UUID 
     status: ShipmentStatus
     estimated_delivery: datetime
     seller: Optional[SellerRead]=Field(default=None)
