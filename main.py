@@ -5,7 +5,7 @@ from rich import print,panel
 from scalar_fastapi import get_scalar_api_reference
 
 from session import create_datebase
-from router import auth, shipment
+from router import seller, shipment,delivery_partner
 
 @asynccontextmanager
 async def lifespan_handler(app:FastAPI):
@@ -25,5 +25,6 @@ def get_scalar_docs():
     )
 
 app.include_router(shipment.router)
-app.include_router(auth.router)
+app.include_router(seller.router)
+app.include_router(delivery_partner.router)
 

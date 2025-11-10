@@ -49,12 +49,28 @@ class ShipmentRead(BaseShipment):
             "estimated_delivery": self.estimated_deliver,
             "seller": self.seller.model_dump()
         }
+    
+
+class DeliveryPartnerBase(BaseModel):
+    name: str = Field(pattern="^[a-zA-Z]{3,20} ?[a-zA-Z]*$")
+    email: EmailStr
+    address: int
+    servicable_zipcode: list[int]
+    max_handling_capacity : int
+    
+   
+
+class DeliveryPartnerCreate(DeliveryPartnerBase):
+    password:str=Field(min_length=6,max_length=16)
+
+
+class DeliveryPartnerRead(DeliveryPartnerBase):
+    id: UUID
+
+
         
 class LoggedOut(BaseModel):
     message: str = Field( default="You have been logged out successfully!")
-
-
-
 
 class Token(BaseModel):
     access_token: str

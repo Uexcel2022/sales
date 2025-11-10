@@ -17,7 +17,7 @@ from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
 
-class AuthService:
+class SellerService:
     def __init__(self, session: AsyncSession):
         self.session = session
 
@@ -61,7 +61,7 @@ class AuthService:
             "jti": str(uuid4()),
             "exp": datetime.now(timezone.utc)+ timedelta(days=1)
             },
-            algorithm=sec_settings.ALGORITHM,key=sec_settings.SECRET_KEY
+             key=sec_settings.SECRET_KEY,algorithm=sec_settings.ALGORITHM
         )
 
         return token
